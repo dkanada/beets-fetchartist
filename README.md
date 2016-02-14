@@ -4,7 +4,11 @@ A plugin that fetches artist covers from last.fm.
 
 ## Installation
 
-Beets has to be configured to use the plugin, for example:
+The plugin requires `pylast` and `requests` which can be installed using `pip`:
+
+	sudo pip install pylast requests
+
+Afterwards Beets has to be configured to use the plugin, for example:
 
 	pluginpath:
 		~/git/fetchartist/beetsplug
