@@ -127,6 +127,10 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         artist_infos = dict()
 
         for item in items:
+            # compilations don't need artist covers
+            if item.comp:
+                continue
+
             artist = FetchArtistPlugin._get_artist_from_item(item)
 
             artist_info = artist_infos.get(artist)
