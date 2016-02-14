@@ -9,6 +9,7 @@ import requests
 from beets import config
 from beets import plugins
 from beets import ui
+from beets import util as beetsutil
 
 from beetsplug import util
 
@@ -119,7 +120,8 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
 
         evaluated_template = item.evaluate_template(template)
         cover_name = self._get_cover_name(item)
-        return os.path.join(self._library_path, evaluated_template, cover_name)
+        path = os.path.join(evaluated_template, cover_name)
+        return os.path.join(self._library_path, beetsutil.sanitize_path(path))
 
     def _create_artist_infos(self, items):
         artist_infos = dict()
