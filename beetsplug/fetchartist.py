@@ -89,7 +89,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         cmd = ui.Subcommand("fetchartist", help="download artist art")
         cmd.parser.add_option("-f", "--force", dest="force",
                               action="store_true", default=False,
-                              help="re-download art when already present")
+                              help="force overwrite existing artist covers")
 
         def _func(lib, opts, args):
             self._fetch_artist(lib.items(ui.decargs(args)), opts.force)
