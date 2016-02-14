@@ -183,7 +183,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
 
     def _write_covers(self, artist_info, force):
         for path in artist_info.get_write_paths(force):
-            self._log.debug("saving cover at '{}'".format(path))
+            self._log.debug(u"saving cover at '{}'".format(path))
             with open(path, "wb") as target:
                 shutil.copyfileobj(artist_info.cover, target)
 
