@@ -102,7 +102,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         Returns an appropriate artist name for the given item. If the given item is
         part of an album, the albumartist, otherwise the artist is returned.
         """
-        if item.get_album() is None:
+        if item.singleton:
             return item.artist
         return item.albumartist
 
@@ -112,7 +112,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         return FetchArtistPlugin._get_artist_from_item(item)
 
     def _create_cover_path(self, item):
-        if item.get_album() is None:
+        if item.singleton:
             template = self._singleton_template
         else:
             template = self._default_template
