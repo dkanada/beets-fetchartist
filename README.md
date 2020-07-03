@@ -1,36 +1,44 @@
-# fetchartist plugin for beets
+# fetchartist
 
-A plugin that fetches artist covers from last.fm.
+A plugin that fetches artist covers from last.fm and places them in the artist directories.
+
+Automatically fetching artist covers during import is not yet supported.
 
 ## Installation
 
-The plugin requires `pylast` and `requests` which can be installed using `pip`:
+The plugin requires `pylast` and `requests` which can be installed using `pip` on the host machine.
 
-	sudo pip install pylast requests
+```sh
+sudo pip install pylast requests
+```
 
-Afterwards Beets has to be configured to use the plugin, for example:
+Afterwards, beets has to be configured to use the plugin.
 
-	pluginpath:
-		~/git/fetchartist/beetsplug
+```sh
+pluginpath:
+  ~/fetchartist
 
-	plugins: fetchartist
+plugins: fetchartist
+```
 
 ## Configuration
 
-The configuration is done in the fetchartist section:
+The configuration is located in the fetchartist section.
 
-	fetchartist:
-		cover_name: ""
+```sh
+fetchartist:
+  filename: "poster"
+```
 
-* cover_name: If set the value will be used as filename for the artist covers.
+* filename: If set the value will be used as filename for the artist covers.
   If it is empty, the artist's name will be used instead. Default: `""`
 
 ## Usage
 
-	Usage: beet fetchartist [options]
+```sh
+Usage: beet fetchartist [options]
 
-	Options:
-	-h, --help   show this help message and exit
-	-f, --force  force overwrite existing artist covers
-
-Automatically fetching artist covers during import is not supported yet.
+Options:
+-h, --help   show this help message and exit
+-f, --force  force overwrite existing artist covers
+```
