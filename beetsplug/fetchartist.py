@@ -2,9 +2,11 @@
 Fetchartist plugin for beets.
 """
 import os
-import shutil
+import re
 import pylast
 import requests
+
+from bs4 import BeautifulSoup
 
 from beets import config
 from beets import plugins
@@ -13,9 +15,9 @@ from beets import util as beetsutil
 
 from beetsplug import util
 
-
 CONTENT_TYPES = ["image/png", "image/jpeg"]
 FILE_TYPES = ['png', 'jpg']
+
 CONTENT_TYPE_TO_EXTENSION_MAP = {
     "image/png": "png",
     "image/jpeg": "jpg"
@@ -23,13 +25,11 @@ CONTENT_TYPE_TO_EXTENSION_MAP = {
 
 COVER_NAME_KEY = "cover_name"
 
-
 class ArtistInfo(object):
     """
     Contains information about an artist, like it's name, paths that point to
     its covers and the cover itself.
     """
-
     def __init__(self, name):
         self.name = name
         self.paths = set()
@@ -50,8 +50,10 @@ class ArtistInfo(object):
         force is set, all covers should be written again.
         """
         write_paths = self.paths
+
         if not force and self.remaining_paths:
             write_paths = self.remaining_paths
+
         return [path + "." + self.extension for path in write_paths]
 
     def __repr__(self):
@@ -62,7 +64,6 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
     """
     The fetchart plugin.
     """
-
     def __init__(self):
         super(FetchArtistPlugin, self).__init__()
 
@@ -71,6 +72,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         self.config.add({
             COVER_NAME_KEY: ""
         })
+
         self._process_config()
         self._create_path_templates()
 
@@ -94,6 +96,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
 
         def _func(lib, opts, args):
             self._fetch_artist(lib.items(ui.decargs(args)), opts.force)
+
         cmd.func = _func
         return [cmd]
 
@@ -105,11 +108,13 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         """
         if item.singleton:
             return item.artist
+
         return item.albumartist
 
     def _get_cover_name(self, item):
         if self._cover_name:
             return self._cover_name
+
         return FetchArtistPlugin._get_artist_from_item(item)
 
     def _create_cover_path(self, item):
@@ -121,6 +126,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         evaluated_template = item.evaluate_template(template)
         cover_name = self._get_cover_name(item)
         path = os.path.join(evaluated_template, cover_name)
+
         return os.path.join(self._library_path, beetsutil.sanitize_path(path))
 
     def _create_artist_infos(self, items):
@@ -144,38 +150,56 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
 
     @staticmethod
     def _check_for_existing_covers(artist_info):
-        existing_paths, missing_paths =\
-                util.find_existing_and_missing_files(artist_info.paths,
-                                                     FILE_TYPES)
-
+        existing_paths, missing_paths = util.find_existing_and_missing_files(artist_info.paths, FILE_TYPES)
         artist_info.remaining_paths = missing_paths
-        # if there is no cover at all, return False
+
+        # return false if there are no covers at all
         if not existing_paths:
             return False
-        # if there are all covers, return True
+
+        # return true when there are all covers
         if not missing_paths:
             return True
 
-        # TODO if only some covers exist query the user what to do
+        # TODO ask the user if only some covers exist
         return False
 
     def _request_cover(self, artist_name):
         artist = self._last_fm.get_artist(artist_name)
-        try:
-            cover_url = artist.get_cover_image()
-        except pylast.WSError:
+        url = artist.get_url()
+
+        if not url:
             return None
 
-        response = requests.get(cover_url, stream=True)
+        headers = {"Accept-Language": "en-US, en;q=0.5"}
+        results = requests.get(url, headers=headers)
+
+        # cover art endpoint was removed so this parses the html
+        soup = BeautifulSoup(results.text, "html.parser")
+
+        # artist image will show up in this element
+        search = soup.find_all('div', class_='header-new-background-image')
+        if not search:
+            return None
+
+        # image is set as the background url
+        image = search[0]['style']
+
+        # strip url from style
+        cover = re.search('\(([^)]+)', image).group(1)
+
+        # this is a custom value that improves the image quality
+        cover = cover.replace('/ar0/', '/770x0/')
+        cover = cover.replace('.jpg', '.png')
+        response = requests.get(cover, stream=True)
 
         content_type = response.headers.get('Content-Type')
         if content_type is None or content_type not in CONTENT_TYPES:
-            self._log.debug(u"not a supported image: {}",
-                            content_type or 'no content type')
+            self._log.debug(u"not a supported image: {}", content_type or 'no content type')
             return None
 
         extension = CONTENT_TYPE_TO_EXTENSION_MAP[content_type]
-        return (response.raw, extension)
+        return (response, extension)
 
     def _fetch_cover(self, artist_info):
         result = self._request_cover(artist_info.name)
@@ -187,20 +211,30 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
 
     def _write_covers(self, artist_info, force):
         for path in artist_info.get_write_paths(force):
+            if not os.path.exists(os.path.dirname(path)):
+                self._log.error('path: {}', path)
+                return False
+
             self._log.debug(u"saving cover at '{}'".format(path))
             with open(path, "wb") as target:
-                shutil.copyfileobj(artist_info.cover, target)
+                for chunk in artist_info.cover.iter_content(chunk_size=128):
+                    target.write(chunk)
+
+        return True
 
     def _update_cover(self, artist_info, force):
         all_exist = FetchArtistPlugin._check_for_existing_covers(artist_info)
         if force or not all_exist:
             if self._fetch_cover(artist_info):
-                self._write_covers(artist_info, force)
-                message = ui.colorize('text_success', 'artist cover found')
+                if self._write_covers(artist_info, force):
+                    message = ui.colorize('text_success', 'artist cover found')
+                else:
+                    message = ui.colorize('text_error', 'path not found')
             else:
                 message = ui.colorize('text_error', 'no artist cover found')
         else:
             message = ui.colorize('text_highlight_minor', 'has artist cover')
+
         self._log.info(u'{0}: {1}', artist_info.name, message)
 
     def _fetch_artist(self, items, force):
