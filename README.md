@@ -1,7 +1,7 @@
 # fetchartist
 
 A plugin that fetches artist covers from last.fm and places them in the artist directories.
-
+They removed this functionality from their API a while ago so this library is parsing the HTML and manually grabbing the images off their site.
 Automatically fetching artist covers during import is not yet supported.
 
 ## Installation
@@ -24,16 +24,17 @@ plugins: fetchartist
 ## Configuration
 
 The configuration is located in the fetchartist section.
+Only the `filename` option exists at the moment, which will determine the filename of the images.
+It will default to empty and use the artist names.
 
 ```sh
 fetchartist:
   filename: "poster"
 ```
 
-* filename: If set the value will be used as filename for the artist covers.
-  If it is empty, the artist's name will be used instead. Default: `""`
-
 ## Usage
+
+This plugin should be the same as any other plugin for beets when using a recent version.
 
 ```sh
 Usage: beet fetchartist [options]
