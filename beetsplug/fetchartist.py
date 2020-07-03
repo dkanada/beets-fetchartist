@@ -23,7 +23,7 @@ CONTENT_TYPE_TO_EXTENSION_MAP = {
     "image/jpeg": "jpg"
 }
 
-COVER_NAME_KEY = "cover_name"
+COVER_NAME_KEY = "filename"
 
 class ArtistInfo(object):
     """
