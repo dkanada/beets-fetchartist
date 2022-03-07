@@ -15,12 +15,14 @@ from beets import util as beetsutil
 
 from beetsplug import util
 
-CONTENT_TYPES = ["image/png", "image/jpeg"]
-FILE_TYPES = ['png', 'jpg']
+CONTENT_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"]
+FILE_TYPES = ['png', 'jpg', 'gif', 'webp']
 
 CONTENT_TYPE_TO_EXTENSION_MAP = {
     "image/png": "png",
-    "image/jpeg": "jpg"
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
 }
 
 COVER_NAME_KEY = "filename"
