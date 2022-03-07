@@ -42,4 +42,5 @@ Usage: beet fetchartist [options]
 Options:
 -h, --help   show this help message and exit
 -f, --force  force overwrite existing artist covers
+-q, --quiet  quiet mode: do not log existing covers
 ```
