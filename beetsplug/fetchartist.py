@@ -123,7 +123,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         else:
             template = self._default_template
 
-        evaluated_template = item.evaluate_template(template)
+        evaluated_template = item.evaluate_template(template, True)
         cover_name = self._get_cover_name(item)
         path = os.path.join(evaluated_template, cover_name)
 
