@@ -93,9 +93,12 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
         cmd.parser.add_option("-f", "--force", dest="force",
                               action="store_true", default=False,
                               help="force overwrite existing artist covers")
+        cmd.parser.add_option("-q", "--quiet", dest="quiet",
+                              action="store_true", default=False,
+                              help="quiet mode: do not log existing covers")
 
         def _func(lib, opts, args):
-            self._fetch_artist(lib.items(ui.decargs(args)), opts.force)
+            self._fetch_artist(lib.items(ui.decargs(args)), opts.force, opts.quiet)
 
         cmd.func = _func
         return [cmd]
@@ -222,7 +225,7 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
 
         return True
 
-    def _update_cover(self, artist_info, force):
+    def _update_cover(self, artist_info, force, quiet):
         all_exist = FetchArtistPlugin._check_for_existing_covers(artist_info)
         if force or not all_exist:
             if self._fetch_cover(artist_info):
@@ -233,11 +236,15 @@ class FetchArtistPlugin(plugins.BeetsPlugin):
             else:
                 message = ui.colorize('text_error', 'no artist cover found')
         else:
-            message = ui.colorize('text_highlight_minor', 'has artist cover')
+            if quiet:
+                message = None
+            else:
+                message = ui.colorize('text_highlight_minor', 'has artist cover')
 
-        self._log.info(u'{0}: {1}', artist_info.name, message)
+        if message is not None:
+            self._log.info(u'{0}: {1}', artist_info.name, message)
 
-    def _fetch_artist(self, items, force):
+    def _fetch_artist(self, items, force, quiet):
         artist_infos = self._create_artist_infos(items)
         for artist_info in artist_infos:
-            self._update_cover(artist_info, force)
+            self._update_cover(artist_info, force, quiet)
